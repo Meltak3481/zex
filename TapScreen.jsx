@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
-import { useGame } from '../state/GameContext.jsx';
-import { getClickValue, getMineValue, getLimitValue } from '../lib/economy.js';
-import { haptic } from '../lib/telegram.js';
+import { useGame } from './GameContext.jsx';
+import { getClickValue, getMineValue, getLimitValue } from './economy.js';
+import { haptic } from './telegram.js';
 
 let floatId = 0;
 

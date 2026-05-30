@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useGame } from '../state/GameContext.jsx';
-import { useToast } from '../components/Toast.jsx';
-import { hapticSuccess, haptic } from '../lib/telegram.js';
-import { POINTS_PER_ZEX, MIN_SWAP_POINTS, formatNumber, formatZex } from '../lib/economy.js';
+import { useGame } from './GameContext.jsx';
+import { useToast } from './Toast.jsx';
+import { hapticSuccess, haptic } from './telegram.js';
+import { POINTS_PER_ZEX, MIN_SWAP_POINTS, formatNumber, formatZex } from './economy.js';
 
 export default function WalletScreen() {
   const { state, actions } = useGame();

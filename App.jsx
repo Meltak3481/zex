@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { GameProvider } from './state/GameContext.jsx';
-import { ToastProvider } from './components/Toast.jsx';
-import TopBar from './components/TopBar.jsx';
-import NavBar from './components/NavBar.jsx';
-import TapScreen from './screens/TapScreen.jsx';
-import BoostScreen from './screens/BoostScreen.jsx';
-import ShopScreen from './screens/ShopScreen.jsx';
-import WalletScreen from './screens/WalletScreen.jsx';
-import { initTelegram } from './lib/telegram.js';
+import { GameProvider } from './GameContext.jsx';
+import { ToastProvider } from './Toast.jsx';
+import TopBar from './TopBar.jsx';
+import NavBar from './NavBar.jsx';
+import TapScreen from './TapScreen.jsx';
+import BoostScreen from './BoostScreen.jsx';
+import ShopScreen from './ShopScreen.jsx';
+import WalletScreen from './WalletScreen.jsx';
+import { initTelegram } from './telegram.js';
 
 export default function App() {
   const [tab, setTab] = useState('tap');

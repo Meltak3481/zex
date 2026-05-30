@@ -1,10 +1,10 @@
-import { useGame } from '../state/GameContext.jsx';
-import { useToast } from '../components/Toast.jsx';
-import { haptic, hapticSuccess } from '../lib/telegram.js';
+import { useGame } from './GameContext.jsx';
+import { useToast } from './Toast.jsx';
+import { haptic, hapticSuccess } from './telegram.js';
 import {
   UPGRADE_PATTERN, MAX_LEVEL,
   getClickValue, getMineValue, getLimitValue, formatNumber,
-} from '../lib/economy.js';
+} from './economy.js';
 
 const STATS = [
   { key: 'click', title: 'Click Power', accent: '#00e5ff', icon: '👆',

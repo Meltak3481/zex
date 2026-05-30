@@ -1,7 +1,7 @@
-import { useGame } from '../state/GameContext.jsx';
-import { useToast } from '../components/Toast.jsx';
-import { haptic, hapticSuccess } from '../lib/telegram.js';
-import { BOOSTS, formatNumber } from '../lib/economy.js';
+import { useGame } from './GameContext.jsx';
+import { useToast } from './Toast.jsx';
+import { haptic, hapticSuccess } from './telegram.js';
+import { BOOSTS, formatNumber } from './economy.js';
 
 export default function ShopScreen() {
   const { state, actions } = useGame();

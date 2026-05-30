@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useReducer, useCallback }
 import {
   getClickValue, getMineValue, getLimitValue, ENERGY_RECHARGE_PER_SEC,
   POINTS_PER_ZEX, BOOST_DURATION_MS,
-} from '../lib/economy.js';
+} from './economy.js';
 
 const STORAGE_KEY = 'zex_game_state_v1';
 
