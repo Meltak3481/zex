@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react';
 import { useGame } from './GameContext.jsx';
 import { getClickValue, getMineValue, getLimitValue } from './economy.js';
 import { haptic } from './telegram.js';
+import coinImg from './coin.png';
+import logoImg from './logo.png';
 
 let floatId = 0;
 
@@ -46,12 +48,7 @@ export default function TapScreen() {
     <div className="screen fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="tap-wrap">
         <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontFamily: 'Orbitron', fontWeight: 900, fontSize: 28,
-            letterSpacing: 2, color: 'var(--text)',
-          }}>
-            ZEX NETWORK
-          </div>
+          <img src={logoImg} alt="Zex Network" style={{ height: 64, marginBottom: 4, filter: 'drop-shadow(0 0 12px rgba(0,180,255,0.4))' }} />
           <div style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 2 }}>
             Tap to mine • {clickValue} / tap
             {state.boostMultiplier > 1 && (
@@ -64,12 +61,11 @@ export default function TapScreen() {
 
         <div
           ref={coinRef}
-          className={'coin' + (hit ? ' hit' : '')}
+          className={'coin-img-wrap' + (hit ? ' hit' : '')}
           onPointerDown={onTap}
         >
-          <div className="pulse" />
-          <div className="ring" />
-          <div className="glyph">Z</div>
+          <div className="coin-glow" />
+          <img src={coinImg} alt="ZEX Coin" className="coin-img" draggable="false" />
           {floats.map((f) => (
             <span
               key={f.id}
