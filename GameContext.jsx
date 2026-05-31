@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useReducer, useCallback }
 import {
   getClickValue, getMineValue, getLimitValue, ENERGY_RECHARGE_PER_SEC,
   POINTS_PER_ZEX, BOOST_DURATION_MS,
+  EGG_REWARDS, weightedRandom, parseReward, CHECKIN_REWARDS,
 } from './economy.js';
 
 const STORAGE_KEY = 'zex_game_state_v1';
@@ -16,6 +17,10 @@ const initialState = {
   boostMultiplier: 1,
   boostEndTime: 0,
   ownedBoosts: [],          // satın alınan boost index'leri
+  ownedEggs: [],            // sahip olunan yumurtalar (tip stringleri: "Free","Common"...)
+  checkinDay: 0,            // 0-6 arası günlük seri
+  lastCheckin: 0,           // son check-in zamanı (ms)
+  lastFreeEgg: 0,           // son günlük ücretsiz egg zamanı (ms)
   lastSeen: Date.now(),     // offline mining hesabı için
   lifetimePoints: 0,        // istatistik
 };
@@ -116,6 +121,50 @@ function reducer(state, action) {
       };
     }
 
+    case 'OPEN_EGG': {
+      // Bir yumurtayı aç: listeden sil, ödülü uygula (label action'dan gelir)
+      const { eggType, label } = action;
+      const idx = state.ownedEggs.indexOf(eggType);
+      if (idx === -1) return state;
+      const newEggs = [...state.ownedEggs];
+      newEggs.splice(idx, 1);
+      const { points, zex } = parseReward(label);
+      return {
+        ...state,
+        ownedEggs: newEggs,
+        points: state.points + points,
+        zex: state.zex + zex,
+        lifetimePoints: state.lifetimePoints + points,
+      };
+    }
+
+    case 'CLAIM_CHECKIN': {
+      // Günlük check-in: 24 saat geçmiş mi kontrolü dışarıda yapılır
+      const day = Math.min(state.checkinDay, 6);
+      const r = CHECKIN_REWARDS[day];
+      const eggs = [...state.ownedEggs];
+      for (let i = 0; i < r.eggCount; i++) eggs.push(r.eggType);
+      const nextDay = (day + 1) % 7; // 7. günden sonra başa sar
+      return {
+        ...state,
+        points: state.points + r.points,
+        zex: state.zex + r.zex,
+        lifetimePoints: state.lifetimePoints + r.points,
+        ownedEggs: eggs,
+        checkinDay: nextDay,
+        lastCheckin: Date.now(),
+      };
+    }
+
+    case 'CLAIM_FREE_EGG': {
+      // Günde bir ücretsiz Free egg
+      return {
+        ...state,
+        ownedEggs: [...state.ownedEggs, 'Free'],
+        lastFreeEgg: Date.now(),
+      };
+    }
+
     case 'HYDRATE':
       return { ...state, ...action.state };
 
@@ -169,10 +218,22 @@ export function GameProvider({ children }) {
     upgrade: useCallback((stat, cost) => dispatch({ type: 'UPGRADE', stat, cost }), []),
     buyBoostWithPoints: useCallback((index, boost) => dispatch({ type: 'BUY_BOOST_POINTS', index, boost }), []),
     swap: useCallback((pointsToConvert) => dispatch({ type: 'SWAP', pointsToConvert }), []),
+    openEgg: useCallback((eggType) => {
+      // Ödülü burada hesapla, hem reducer'a hem çağırana ver
+      const label = weightedRandom(EGG_REWARDS[eggType]);
+      dispatch({ type: 'OPEN_EGG', eggType, label });
+      return label;
+    }, []),
+    claimCheckin: useCallback(() => dispatch({ type: 'CLAIM_CHECKIN' }), []),
+    claimFreeEgg: useCallback(() => dispatch({ type: 'CLAIM_FREE_EGG' }), []),
   };
 
+  // Yardımcılar (UI kontrolleri için)
+  const canCheckin = Date.now() - state.lastCheckin >= 24 * 3600 * 1000;
+  const canClaimFreeEgg = Date.now() - state.lastFreeEgg >= 24 * 3600 * 1000;
+
   return (
-    <GameContext.Provider value={{ state, actions }}>
+    <GameContext.Provider value={{ state, actions, canCheckin, canClaimFreeEgg }}>
       {children}
     </GameContext.Provider>
   );

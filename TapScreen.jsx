@@ -3,15 +3,15 @@ import { useGame } from './GameContext.jsx';
 import { getClickValue, getMineValue, getLimitValue } from './economy.js';
 import { haptic } from './telegram.js';
 import coinImg from './coin.png';
-import logoImg from './logo.png';
 
 let floatId = 0;
 
 export default function TapScreen() {
   const { state, actions } = useGame();
   const [floats, setFloats] = useState([]);
-  const [hit, setHit] = useState(false);
+  const [rotation, setRotation] = useState(0);
   const coinRef = useRef(null);
+  const resetTimer = useRef(null);
 
   const cap = getLimitValue(state.limitLevel);
   const energyPct = Math.min(100, (state.energy / cap) * 100);
@@ -26,30 +26,37 @@ export default function TapScreen() {
     actions.tap();
     haptic('light');
 
-    // tıklama noktasında +N parçacığı
     const rect = coinRef.current?.getBoundingClientRect();
-    let x = 50, y = 40;
     const touch = e.touches?.[0] || e.changedTouches?.[0];
     const px = touch ? touch.clientX : e.clientX;
     const py = touch ? touch.clientY : e.clientY;
+
+    // Flutter mantığı: dokunulan nokta merkezin sağındaysa sağa (+), solundaysa sola (-) dön
+    let x = 50, y = 40;
+    let dir = 1;
     if (rect && px != null) {
+      const center = rect.left + rect.width / 2;
+      dir = px > center ? 1 : -1;
       x = ((px - rect.left) / rect.width) * 100;
       y = ((py - rect.top) / rect.height) * 100;
     }
+
+    // Coin dokunulan yöne döner, sonra hemen düzelir
+    setRotation(dir * 18); // derece (Flutter'daki 0.2 rad ~ 11.5°, biraz belirgin yaptım)
+    clearTimeout(resetTimer.current);
+    resetTimer.current = setTimeout(() => setRotation(0), 130);
+
+    // +N parçacığı
     const id = ++floatId;
     setFloats((f) => [...f, { id, x, y, val: clickValue }]);
     setTimeout(() => setFloats((f) => f.filter((it) => it.id !== id)), 900);
-
-    setHit(true);
-    setTimeout(() => setHit(false), 120);
   }, [canTap, actions, clickValue]);
 
   return (
     <div className="screen fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="tap-wrap">
         <div style={{ textAlign: 'center' }}>
-          <img src={logoImg} alt="Zex Network" style={{ height: 64, marginBottom: 4, filter: 'drop-shadow(0 0 12px rgba(0,180,255,0.4))' }} />
-          <div style={{ color: 'var(--text-dim)', fontSize: 13, marginTop: 2 }}>
+          <div style={{ color: 'var(--text-dim)', fontSize: 14, fontWeight: 600 }}>
             Tap to mine • {clickValue} / tap
             {state.boostMultiplier > 1 && (
               <span style={{ color: 'var(--neon-orange)', fontWeight: 700 }}>
@@ -59,13 +66,18 @@ export default function TapScreen() {
           </div>
         </div>
 
-        <div
-          ref={coinRef}
-          className={'coin-img-wrap' + (hit ? ' hit' : '')}
-          onPointerDown={onTap}
-        >
-          <div className="coin-glow" />
-          <img src={coinImg} alt="ZEX Coin" className="coin-img" draggable="false" />
+        <div className="coin-stage">
+          <div
+            ref={coinRef}
+            className="coin-img-wrap"
+            onPointerDown={onTap}
+            style={{
+              transform: `perspective(800px) rotateY(${rotation}deg)`,
+            }}
+          >
+            <div className="coin-glow" />
+            <img src={coinImg} alt="ZEX Coin" className="coin-img" draggable="false" />
+          </div>
           {floats.map((f) => (
             <span
               key={f.id}

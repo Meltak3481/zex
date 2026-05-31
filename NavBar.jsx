@@ -2,6 +2,7 @@ const TABS = [
   { id: 'tap', label: 'Mine', icon: '⛏️' },
   { id: 'boost', label: 'Power', icon: '🚀' },
   { id: 'shop', label: 'Boost', icon: '✨' },
+  { id: 'checkin', label: 'Egg', icon: '🥚' },
   { id: 'wallet', label: 'Wallet', icon: '💎' },
 ];
 

@@ -71,3 +71,62 @@ export function formatNumber(n) {
 export function formatZex(n) {
   return n.toFixed(3).replace(/\.?0+$/, '');
 }
+
+// ===== EGG SİSTEMİ (Flutter global_game_data.openEgg ile aynı) =====
+export const EGG_TYPES = ['Free', 'Common', 'Rare', 'Legendary'];
+
+// Egg açma ödül havuzları (ağırlıklı). label parse edilip puan/zex verilir.
+export const EGG_REWARDS = {
+  Free: [
+    { label: '3000 Points', weight: 50 },
+    { label: '5 ZEX', weight: 35 },
+    { label: '10 ZEX', weight: 15 },
+  ],
+  Common: [
+    { label: '5000 Points', weight: 40 },
+    { label: '10000 Points', weight: 30 },
+    { label: '20 ZEX', weight: 20 },
+    { label: '30 ZEX', weight: 10 },
+  ],
+  Rare: [
+    { label: '20000 Points', weight: 45 },
+    { label: '40 ZEX', weight: 35 },
+    { label: '50 ZEX', weight: 20 },
+  ],
+  Legendary: [
+    { label: '30000 Points', weight: 35 },
+    { label: '60 ZEX', weight: 30 },
+    { label: '80 ZEX', weight: 25 },
+    { label: '100 ZEX', weight: 10 },
+  ],
+};
+
+// Ağırlıklı rastgele seçim
+export function weightedRandom(rewards) {
+  const total = rewards.reduce((s, r) => s + r.weight, 0);
+  let roll = Math.random() * total;
+  for (const r of rewards) {
+    roll -= r.weight;
+    if (roll <= 0) return r.label;
+  }
+  return rewards[rewards.length - 1].label;
+}
+
+// Ödül etiketini {points, zex} olarak çöz
+export function parseReward(label) {
+  const num = parseFloat(label);
+  if (label.includes('Points')) return { points: num, zex: 0 };
+  if (label.includes('ZEX')) return { points: 0, zex: num };
+  return { points: 0, zex: 0 };
+}
+
+// 7 günlük check-in ödülleri (Flutter checkin_screen.rewards ile aynı)
+export const CHECKIN_REWARDS = [
+  { points: 10000, zex: 15, eggType: 'Common', eggCount: 1 },
+  { points: 12500, zex: 20, eggType: 'Rare', eggCount: 1 },
+  { points: 15000, zex: 25, eggType: 'Rare', eggCount: 2 },
+  { points: 17500, zex: 30, eggType: 'Rare', eggCount: 2 },
+  { points: 20000, zex: 35, eggType: 'Rare', eggCount: 1 },
+  { points: 25000, zex: 40, eggType: 'Legendary', eggCount: 1 },
+  { points: 30000, zex: 50, eggType: 'Legendary', eggCount: 2 },
+];
