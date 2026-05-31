@@ -3,29 +3,40 @@ import { useToast } from './Toast.jsx';
 import { haptic, hapticSuccess } from './telegram.js';
 import { BOOSTS, formatNumber } from './economy.js';
 
+function fmtDur(ms) {
+  if (ms <= 0) return '0m';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h left`;
+  if (h > 0) return `${h}h ${m}m left`;
+  return `${m}m left`;
+}
+
 export default function ShopScreen() {
-  const { state, actions } = useGame();
+  const { state, actions, boostRemaining } = useGame();
   const toast = useToast();
 
   const buyWithPoints = (index, boost) => {
     if (state.ownedBoosts.includes(index)) return;
     if (index > 0 && !state.ownedBoosts.includes(index - 1)) {
-      toast('Önce bir önceki boostu al!');
+      toast('Buy the previous boost first!');
       haptic('rigid');
       return;
     }
     if (state.points < boost.pointCost) {
-      toast(`Yetersiz puan! ${formatNumber(boost.pointCost)} gerekli`);
+      toast(`Not enough points! Need ${formatNumber(boost.pointCost)}`);
       haptic('rigid');
       return;
     }
     actions.buyBoostWithPoints(index, boost);
     hapticSuccess();
-    toast(`${boost.label} alındı! +${boost.bonus} ZEX`);
+    toast(`${boost.label} purchased! +${boost.bonus} ZEX`);
   };
 
   const buyWithMoney = () => {
-    toast('💎 Telegram Stars ödeme yakında eklenecek');
+    toast('💎 Telegram Stars payment coming soon');
     haptic('rigid');
   };
 
@@ -40,7 +51,7 @@ export default function ShopScreen() {
       </div>
 
       <p style={{ color: 'var(--text-dim)', fontSize: 13, margin: '0 2px 14px', lineHeight: 1.4 }}>
-        Günlük ZEX çarpanını artır + anında ZEX bonusu kazan. Puanla ya da parayla al. Her boost 5 gün sürer.
+        Boost your daily ZEX multiplier + get an instant ZEX bonus. Buy with points or money. Each boost lasts 5 days.
       </p>
 
       {BOOSTS.map((boost, index) => {
@@ -48,6 +59,8 @@ export default function ShopScreen() {
         const available = index === 0 || state.ownedBoosts.includes(index - 1);
         const canBuy = available && !owned;
         const canAfford = state.points >= boost.pointCost;
+        // Bu boost şu an aktif çarpan mı ve süresi devam ediyor mu?
+        const isActiveBoost = owned && state.boostMultiplier === boost.multiplier && boostRemaining > 0;
 
         return (
           <div key={index} className="card" style={{
@@ -71,7 +84,18 @@ export default function ShopScreen() {
                   🎁 +{boost.bonus} ZEX instant bonus
                 </div>
               </div>
-              {owned && <span className="owned-tag">✓ OWNED</span>}
+              {owned && (
+                isActiveBoost ? (
+                  <span className="owned-tag" style={{
+                    background: 'rgba(255,122,61,0.18)', color: 'var(--neon-orange)',
+                    borderColor: 'rgba(255,122,61,0.4)',
+                  }}>
+                    ⏳ {fmtDur(boostRemaining)}
+                  </span>
+                ) : (
+                  <span className="owned-tag">✓ OWNED</span>
+                )
+              )}
             </div>
 
             {!owned && (
@@ -94,7 +118,7 @@ export default function ShopScreen() {
                   </button>
                 </div>
                 {!available && (
-                  <div className="locked-note">🔒 Önceki boostu al</div>
+                  <div className="locked-note">🔒 Buy previous boost</div>
                 )}
               </>
             )}

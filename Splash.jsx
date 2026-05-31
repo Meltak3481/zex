@@ -24,7 +24,6 @@ export default function Splash({ onDone }) {
       <div className="splash-overlay" />
       <div className="splash-content">
         <img src={logoImg} alt="Zex Network" className="splash-logo" />
-        <div className="splash-title">ZEX NETWORK</div>
         <div className="splash-loader"><div className="splash-bar" /></div>
       </div>
     </div>

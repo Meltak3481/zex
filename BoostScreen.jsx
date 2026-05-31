@@ -29,12 +29,12 @@ export default function BoostScreen() {
     const step = UPGRADE_PATTERN[idx];
 
     if (step.type === 'money') {
-      toast('💎 Bu seviye Telegram Stars ile açılacak (yakında)');
+      toast('💎 This level unlocks with Telegram Stars (coming soon)');
       haptic('rigid');
       return;
     }
     if (state.points < step.cost) {
-      toast(`Yetersiz puan! ${formatNumber(step.cost)} gerekli`);
+      toast(`Not enough points! Need ${formatNumber(step.cost)}`);
       haptic('rigid');
       return;
     }

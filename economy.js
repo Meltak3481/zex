@@ -5,6 +5,10 @@
 export const POINTS_PER_ZEX = 40000;
 export const MIN_SWAP_POINTS = 40000; // minimum çevrim (mikro-ZEX istismarını önler)
 
+// Günlük ZEX claim baz ödülü (Flutter: 10 ZEX/gün, boost ile çarpılır)
+export const DAILY_ZEX_BASE = 10;
+export const DAILY_ZEX_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 saatte tam dolar
+
 // Click (tap) gücü: her seviye +1 puan/tap
 export const getClickValue = (level) => level;
 
@@ -72,32 +76,48 @@ export function formatZex(n) {
   return n.toFixed(3).replace(/\.?0+$/, '');
 }
 
-// ===== EGG SİSTEMİ (Flutter global_game_data.openEgg ile aynı) =====
+// ===== EGG SİSTEMİ =====
 export const EGG_TYPES = ['Free', 'Common', 'Rare', 'Legendary'];
 
-// Egg açma ödül havuzları (ağırlıklı). label parse edilip puan/zex verilir.
+// Egg satın alma fiyatları (Stars + TON). Oran ~200 Stars = 1 TON.
+export const EGG_PRICES = {
+  Free: { stars: 10, ton: 0.05 },
+  Common: { stars: 20, ton: 0.1 },
+  Rare: { stars: 40, ton: 0.2 },
+  Legendary: { stars: 70, ton: 0.35 },
+};
+
+// Egg açma ödül havuzları (genişletilmiş, dengeli). Yumurtadan yumurta ÇIKMAZ.
+// Ödül tipleri: sadece puan / sadece ZEX / ikisi birden.
 export const EGG_REWARDS = {
   Free: [
-    { label: '3000 Points', weight: 50 },
-    { label: '5 ZEX', weight: 35 },
-    { label: '10 ZEX', weight: 15 },
+    { label: '2000 Points', weight: 28 },
+    { label: '3500 Points', weight: 20 },
+    { label: '5 ZEX', weight: 25 },
+    { label: '8 ZEX', weight: 14 },
+    { label: '1500 Points + 4 ZEX', weight: 13 },
   ],
   Common: [
-    { label: '5000 Points', weight: 40 },
-    { label: '10000 Points', weight: 30 },
-    { label: '20 ZEX', weight: 20 },
-    { label: '30 ZEX', weight: 10 },
+    { label: '5000 Points', weight: 26 },
+    { label: '8000 Points', weight: 20 },
+    { label: '12 ZEX', weight: 24 },
+    { label: '20 ZEX', weight: 14 },
+    { label: '4000 Points + 10 ZEX', weight: 16 },
   ],
   Rare: [
-    { label: '20000 Points', weight: 45 },
-    { label: '40 ZEX', weight: 35 },
-    { label: '50 ZEX', weight: 20 },
+    { label: '12000 Points', weight: 25 },
+    { label: '18000 Points', weight: 18 },
+    { label: '25 ZEX', weight: 24 },
+    { label: '40 ZEX', weight: 15 },
+    { label: '10000 Points + 20 ZEX', weight: 18 },
   ],
   Legendary: [
-    { label: '30000 Points', weight: 35 },
-    { label: '60 ZEX', weight: 30 },
-    { label: '80 ZEX', weight: 25 },
-    { label: '100 ZEX', weight: 10 },
+    { label: '25000 Points', weight: 22 },
+    { label: '40000 Points', weight: 16 },
+    { label: '50 ZEX', weight: 22 },
+    { label: '80 ZEX', weight: 15 },
+    { label: '100 ZEX', weight: 9 },
+    { label: '20000 Points + 45 ZEX', weight: 16 },
   ],
 };
 
@@ -112,12 +132,14 @@ export function weightedRandom(rewards) {
   return rewards[rewards.length - 1].label;
 }
 
-// Ödül etiketini {points, zex} olarak çöz
+// Ödül etiketini {points, zex} olarak çöz ("X Points", "Y ZEX", "X Points + Y ZEX")
 export function parseReward(label) {
-  const num = parseFloat(label);
-  if (label.includes('Points')) return { points: num, zex: 0 };
-  if (label.includes('ZEX')) return { points: 0, zex: num };
-  return { points: 0, zex: 0 };
+  let points = 0, zex = 0;
+  const pMatch = label.match(/(\d+)\s*Points/i);
+  const zMatch = label.match(/(\d+)\s*ZEX/i);
+  if (pMatch) points = parseInt(pMatch[1], 10);
+  if (zMatch) zex = parseInt(zMatch[1], 10);
+  return { points, zex };
 }
 
 // 7 günlük check-in ödülleri (Flutter checkin_screen.rewards ile aynı)

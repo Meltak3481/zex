@@ -3,10 +3,9 @@ import Lottie from 'lottie-react';
 import { useGame } from './GameContext.jsx';
 import { useToast } from './Toast.jsx';
 import { haptic, hapticSuccess } from './telegram.js';
-import { CHECKIN_REWARDS, EGG_TYPES, formatNumber } from './economy.js';
+import { CHECKIN_REWARDS, EGG_TYPES, EGG_PRICES, formatNumber } from './economy.js';
 import eggBreakAnim from './egg_break.json';
 
-// Yumurta görselleri (sağlam + kırık)
 import eggFree from './egg_free.png';
 import eggCommon from './egg_common.png';
 import eggRare from './egg_rare.png';
@@ -16,44 +15,29 @@ import eggCommonBroken from './egg_common_broken.png';
 import eggRareBroken from './egg_rare_broken.png';
 import eggLegendaryBroken from './egg_legendary_broken.png';
 
-const EGG_IMG = {
-  Free: eggFree, Common: eggCommon, Rare: eggRare, Legendary: eggLegendary,
-};
-const EGG_BROKEN = {
-  Free: eggFreeBroken, Common: eggCommonBroken, Rare: eggRareBroken, Legendary: eggLegendaryBroken,
-};
-const EGG_COLOR = {
-  Free: '#4db8ff', Common: '#ffc83d', Rare: '#ff4d4d', Legendary: '#ff9a3d',
-};
+const EGG_IMG = { Free: eggFree, Common: eggCommon, Rare: eggRare, Legendary: eggLegendary };
+const EGG_BROKEN = { Free: eggFreeBroken, Common: eggCommonBroken, Rare: eggRareBroken, Legendary: eggLegendaryBroken };
+const EGG_COLOR = { Free: '#4db8ff', Common: '#ffc83d', Rare: '#ff4d4d', Legendary: '#ff9a3d' };
 
 export default function CheckinScreen() {
-  const { state, actions, canCheckin, canClaimFreeEgg } = useGame();
+  const { state, actions, canCheckin } = useGame();
   const toast = useToast();
-  const [opening, setOpening] = useState(null); // {type} açılıyor
-  const [reward, setReward] = useState(null);   // açılan ödül popup
+  const [opening, setOpening] = useState(null);   // {type} Lottie açılışı
+  const [reward, setReward] = useState(null);     // ödül popup
+  const [buyPopup, setBuyPopup] = useState(null); // {type} satın alma popup
+
+  const day = Math.min(state.checkinDay, 6);
+  const todayReward = CHECKIN_REWARDS[day];
 
   const handleCheckin = () => {
     if (!canCheckin) {
-      toast('Bugünkü check-in yapıldı, yarın tekrar gel!');
+      toast('Already checked in today. Come back tomorrow!');
       haptic('rigid');
       return;
     }
-    const day = Math.min(state.checkinDay, 6);
-    const r = CHECKIN_REWARDS[day];
     actions.claimCheckin();
     hapticSuccess();
-    toast(`Gün ${day + 1}: +${formatNumber(r.points)} puan, +${r.zex} ZEX, ${r.eggCount}x ${r.eggType} egg!`);
-  };
-
-  const handleFreeEgg = () => {
-    if (!canClaimFreeEgg) {
-      toast('Günlük ücretsiz yumurta alındı, yarın tekrar gel!');
-      haptic('rigid');
-      return;
-    }
-    actions.claimFreeEgg();
-    hapticSuccess();
-    toast('Ücretsiz Free egg kazandın! 🥚');
+    toast(`Day ${day + 1}: +${formatNumber(todayReward.points)} pts, +${todayReward.zex} ZEX, ${todayReward.eggCount}x ${todayReward.eggType} egg!`);
   };
 
   const handleOpenEgg = (type) => {
@@ -61,10 +45,8 @@ export default function CheckinScreen() {
     const count = state.ownedEggs.filter((e) => e === type).length;
     if (count === 0) return;
     haptic('medium');
-    // Ödülü hemen hesapla ve state'i güncelle, ama önce animasyonu göster
     const label = actions.openEgg(type);
     setOpening({ type, label });
-    // Lottie animasyonu ~3 sn (kırılma kısmı), bitince ödül popup
     setTimeout(() => {
       hapticSuccess();
       setReward({ type, label });
@@ -72,109 +54,100 @@ export default function CheckinScreen() {
     }, 2600);
   };
 
-  // egg sayıları
+  // Satın alma popup'ı aç
+  const openBuyPopup = (type) => {
+    haptic('light');
+    setBuyPopup({ type });
+  };
+
+  // Test modu: ödeme yapılmış gibi egg ver
+  const payWith = (method) => {
+    const type = buyPopup.type;
+    actions.buyEgg(type);
+    hapticSuccess();
+    toast(`${type} egg purchased with ${method}! (test)`);
+    setBuyPopup(null);
+  };
+
   const counts = {};
   EGG_TYPES.forEach((t) => { counts[t] = state.ownedEggs.filter((e) => e === t).length; });
-  const totalEggs = state.ownedEggs.length;
 
   return (
-    <div className="screen fade-in">
-      {/* Günlük Check-in */}
-      <div className="section-title">
-        <span className="bar" style={{ background: 'var(--neon-green)' }} />
-        Daily Check-in
+    <div className="screen fade-in" style={{ paddingTop: 0 }}>
+      {/* Gradyan başlık bandı */}
+      <div className="checkin-banner">Daily Check-in</div>
+
+      {/* Seçili gün ödül kartı */}
+      <div className="checkin-today">
+        <div className="ct-day">Day {day + 1}</div>
+        <div className="ct-reward">
+          {formatNumber(todayReward.points)} points + {todayReward.zex} ZEX + {todayReward.eggCount} {todayReward.eggType} Egg
+        </div>
       </div>
 
-      <div className="checkin-grid">
+      {/* Day 1-7 tik sırası */}
+      <div className="checkin-days">
         {CHECKIN_REWARDS.map((r, i) => {
           const done = i < state.checkinDay;
           const current = i === state.checkinDay && canCheckin;
           return (
-            <div
-              key={i}
-              className={'checkin-day' + (done ? ' done' : '') + (current ? ' current' : '')}
-            >
-              <div className="cd-day">Gün {i + 1}</div>
-              <div className="cd-egg" style={{ color: EGG_COLOR[r.eggType] }}>🥚</div>
-              <div className="cd-zex">+{r.zex} ZEX</div>
-              <div className="cd-pts">{formatNumber(r.points)}</div>
-              {done && <div className="cd-check">✓</div>}
+            <div key={i} className={'cday' + (current ? ' current' : '')}>
+              <div className="cday-label">Day {i + 1}</div>
+              <div className={'cday-circle' + (done ? ' done' : '')}>
+                {done ? '✓' : i + 1}
+              </div>
             </div>
           );
         })}
       </div>
 
+      {/* Check-in butonu */}
       <button
         className={'btn ' + (canCheckin ? 'btn-green' : 'btn-ghost')}
-        style={{ width: '100%', marginTop: 4 }}
+        style={{ width: '100%', marginTop: 6, padding: '14px' }}
         onClick={handleCheckin}
         disabled={!canCheckin}
       >
-        {canCheckin ? `✓ Gün ${Math.min(state.checkinDay, 6) + 1} Check-in Yap` : '⏳ Yarın tekrar gel'}
+        {canCheckin ? 'Check-in' : 'Come back tomorrow'}
       </button>
 
-      <button
-        className={'btn ' + (canClaimFreeEgg ? 'btn-cyan' : 'btn-ghost')}
-        style={{ width: '100%', marginTop: 10 }}
-        onClick={handleFreeEgg}
-        disabled={!canClaimFreeEgg}
-      >
-        {canClaimFreeEgg ? '🎁 Günlük Ücretsiz Yumurta Al' : '⏳ Ücretsiz yumurta alındı'}
-      </button>
+      {/* Your Eggs */}
+      <div className="your-eggs-title">Your Eggs</div>
 
-      {/* Yumurtalarım */}
-      <div className="section-title" style={{ marginTop: 22 }}>
-        <span className="bar" style={{ background: 'var(--neon-gold)' }} />
-        Yumurtalarım ({totalEggs})
-      </div>
-
-      {totalEggs === 0 && (
-        <p style={{ color: 'var(--text-dim)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
-          Henüz yumurtan yok. Check-in yap veya ücretsiz yumurta al!
-        </p>
-      )}
-
-      <div className="egg-grid">
+      <div className="eggs-row">
         {EGG_TYPES.map((type) => {
           const count = counts[type];
-          if (count === 0) return null;
+          const price = EGG_PRICES[type];
           return (
-            <div key={type} className="egg-card" style={{ borderColor: EGG_COLOR[type] + '66' }}>
-              <div className="egg-img-wrap" onClick={() => handleOpenEgg(type)}>
-                <img
-                  src={EGG_IMG[type]}
-                  alt={type}
-                  className="egg-img idle"
-                  draggable="false"
-                />
-                <span className="egg-count" style={{ background: EGG_COLOR[type] }}>{count}</span>
-              </div>
-              <div className="egg-name" style={{ color: EGG_COLOR[type] }}>{type}</div>
-              <button
-                className="btn btn-gold"
-                style={{ width: '100%', padding: '8px', fontSize: 13 }}
-                onClick={() => handleOpenEgg(type)}
-                disabled={!!opening}
+            <div key={type} className="egg-col">
+              <div
+                className="egg-thumb"
+                onClick={() => count > 0 && handleOpenEgg(type)}
+                style={{ cursor: count > 0 ? 'pointer' : 'default' }}
               >
-                Aç
+                <img src={EGG_IMG[type]} alt={type} draggable="false" />
+              </div>
+              <div className="egg-col-name">{type} Egg</div>
+              <div className="egg-col-count" style={{ color: EGG_COLOR[type] }}>x{count}</div>
+              <button className="btn btn-cyan egg-buy-btn" onClick={() => openBuyPopup(type)}>
+                Buy ({price.stars} ⭐)
               </button>
             </div>
           );
         })}
       </div>
 
-      {/* Lottie yumurta kırılma animasyonu (tam ekran overlay) */}
+      <p className="egg-hint">
+        Tap an egg you own to open it and win rewards!
+      </p>
+
+      {/* Lottie kırılma overlay */}
       {opening && (
         <div className="egg-break-overlay">
           <div className="egg-break-stage">
-            <Lottie
-              animationData={eggBreakAnim}
-              loop={false}
-              autoplay={true}
-              style={{ width: 280, height: 280 }}
-            />
+            <Lottie animationData={eggBreakAnim} loop={false} autoplay style={{ width: 280, height: 280 }} />
             <div className="egg-break-label" style={{ color: EGG_COLOR[opening.type] }}>
-              {opening.type} açılıyor...
+              Opening {opening.type}...
             </div>
           </div>
         </div>
@@ -185,12 +158,39 @@ export default function CheckinScreen() {
         <div className="reward-overlay" onClick={() => setReward(null)}>
           <div className="reward-pop" onClick={(e) => e.stopPropagation()}>
             <img src={EGG_BROKEN[reward.type]} alt="" style={{ width: 120, height: 120, objectFit: 'contain' }} />
-            <div className="reward-title">{reward.label || 'Ödül!'}</div>
+            <div className="reward-title">{reward.label}</div>
             <div style={{ color: 'var(--text-dim)', fontSize: 13, marginBottom: 14 }}>
-              {reward.type} yumurta açıldı
+              {reward.type} egg opened
             </div>
             <button className="btn btn-green" style={{ width: '100%' }} onClick={() => setReward(null)}>
-              Harika!
+              Awesome!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Satın alma popup (Stars / TON) */}
+      {buyPopup && (
+        <div className="reward-overlay" onClick={() => setBuyPopup(null)}>
+          <div className="buy-pop" onClick={(e) => e.stopPropagation()}>
+            <img src={EGG_IMG[buyPopup.type]} alt="" style={{ width: 90, height: 90, objectFit: 'contain' }} />
+            <div className="buy-title" style={{ color: EGG_COLOR[buyPopup.type] }}>
+              Buy {buyPopup.type} Egg
+            </div>
+            <div className="buy-sub">Choose payment method</div>
+
+            <button className="btn btn-gold buy-method" onClick={() => payWith('Stars')}>
+              <span>⭐ Pay with Stars</span>
+              <span className="buy-price">{EGG_PRICES[buyPopup.type].stars} Stars</span>
+            </button>
+
+            <button className="btn btn-cyan buy-method" onClick={() => payWith('TON')}>
+              <span>💎 Pay with TON</span>
+              <span className="buy-price">{EGG_PRICES[buyPopup.type].ton} TON</span>
+            </button>
+
+            <button className="btn btn-ghost" style={{ width: '100%', marginTop: 4 }} onClick={() => setBuyPopup(null)}>
+              Cancel
             </button>
           </div>
         </div>

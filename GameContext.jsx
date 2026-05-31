@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useReducer, useCallback } from 'react';
 import {
-  getClickValue, getMineValue, getLimitValue, ENERGY_RECHARGE_PER_SEC,
+  getClickValue, getMineValue, getLimitValue,
   POINTS_PER_ZEX, BOOST_DURATION_MS,
+  DAILY_ZEX_BASE, DAILY_ZEX_PERIOD_MS,
   EGG_REWARDS, weightedRandom, parseReward, CHECKIN_REWARDS,
 } from './economy.js';
 
@@ -21,6 +22,7 @@ const initialState = {
   checkinDay: 0,            // 0-6 arası günlük seri
   lastCheckin: 0,           // son check-in zamanı (ms)
   lastFreeEgg: 0,           // son günlük ücretsiz egg zamanı (ms)
+  lastZexClaim: Date.now(), // son günlük ZEX claim zamanı (ms)
   lastSeen: Date.now(),     // offline mining hesabı için
   lifetimePoints: 0,        // istatistik
 };
@@ -45,45 +47,52 @@ function save(state) {
 function reducer(state, action) {
   switch (action.type) {
     case 'TAP': {
-      const gain = getClickValue(state.clickLevel);
-      if (state.energy < gain) return state; // enerji yetmiyorsa tap boşa gitmesin
+      const baseGain = getClickValue(state.clickLevel);
+      // Enerji baz click değeri kadar düşer; puan boost ile çarpılır (ikisi birden çarpsın)
+      if (state.energy < baseGain) return state;
+      const pointGain = baseGain * state.boostMultiplier;
       return {
         ...state,
-        points: state.points + gain,
-        lifetimePoints: state.lifetimePoints + gain,
-        energy: Math.max(0, state.energy - gain),
+        points: state.points + pointGain,
+        lifetimePoints: state.lifetimePoints + pointGain,
+        energy: Math.max(0, state.energy - baseGain),
       };
     }
 
     case 'TICK': {
-      // Saniyelik: mining üretimi + enerji yenilenme + boost süresi kontrolü
+      // Flutter mantığı: puan OTOMATİK ARTMAZ. Sadece enerji dolar (saniyede mineValue kadar).
       const cap = getLimitValue(state.limitLevel);
       const mine = getMineValue(state.mineLevel);
       let boostMultiplier = state.boostMultiplier;
       if (boostMultiplier > 1 && Date.now() > state.boostEndTime) {
-        boostMultiplier = 1; // boost süresi doldu (Flutter checkBoostExpiry karşılığı)
+        boostMultiplier = 1; // boost süresi doldu
       }
-      const produced = mine; // mining puanı (boost ZEX'e etki eder, puana değil — Flutter mantığı)
+      // Enerji zaten doluysa ve boost değişmediyse gereksiz state güncellemesi yapma
+      if (state.energy >= cap && boostMultiplier === state.boostMultiplier) {
+        // Boost aktifken geri sayımın canlı kalması için yine de tik at (sadece lastSeen)
+        if (state.boostMultiplier > 1) {
+          return { ...state, lastSeen: Date.now() };
+        }
+        return state;
+      }
       return {
         ...state,
-        points: state.points + produced,
-        lifetimePoints: state.lifetimePoints + produced,
-        energy: Math.min(cap, state.energy + ENERGY_RECHARGE_PER_SEC),
+        energy: Math.min(cap, state.energy + mine),
         boostMultiplier,
         lastSeen: Date.now(),
       };
     }
 
-    case 'OFFLINE_EARN': {
-      // Uygulama kapalıyken geçen süre için mining (max 8 saat cap)
-      const seconds = Math.min(action.seconds, 8 * 3600);
+    case 'OFFLINE_FILL': {
+      // Flutter _offlineFillLimit: kapalıyken geçen süre kadar ENERJİ dolar (puan DEĞİL)
+      const cap = getLimitValue(state.limitLevel);
       const mine = getMineValue(state.mineLevel);
-      const earned = Math.floor(seconds * mine);
-      if (earned <= 0) return state;
+      const seconds = Math.min(action.seconds, 8 * 3600);
+      const fill = Math.floor(seconds * mine);
+      if (fill <= 0) return state;
       return {
         ...state,
-        points: state.points + earned,
-        lifetimePoints: state.lifetimePoints + earned,
+        energy: Math.min(cap, state.energy + fill),
         lastSeen: Date.now(),
       };
     }
@@ -165,6 +174,29 @@ function reducer(state, action) {
       };
     }
 
+    case 'BUY_EGG': {
+      // Test modu: ödeme yapılmış gibi egg ekle (gerçek Stars/TON sonra)
+      return {
+        ...state,
+        ownedEggs: [...state.ownedEggs, action.eggType],
+      };
+    }
+
+    case 'CLAIM_DAILY_ZEX': {
+      // Flutter mantığı: biriken günlük ZEX'i hesaba ekle, sayacı sıfırla.
+      // Birikim = (10 × boost) × (geçen süre / 24 saat), max 10×boost
+      const elapsed = Date.now() - state.lastZexClaim;
+      const daily = DAILY_ZEX_BASE * state.boostMultiplier;
+      const ratio = Math.min(1, elapsed / DAILY_ZEX_PERIOD_MS);
+      const claimable = daily * ratio;
+      if (claimable <= 0) return state;
+      return {
+        ...state,
+        zex: state.zex + claimable,
+        lastZexClaim: Date.now(),
+      };
+    }
+
     case 'HYDRATE':
       return { ...state, ...action.state };
 
@@ -185,7 +217,7 @@ export function GameProvider({ children }) {
     const last = stateRef.current.lastSeen;
     if (last) {
       const seconds = Math.floor((Date.now() - last) / 1000);
-      if (seconds > 5) dispatch({ type: 'OFFLINE_EARN', seconds });
+      if (seconds > 5) dispatch({ type: 'OFFLINE_FILL', seconds });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -226,14 +258,31 @@ export function GameProvider({ children }) {
     }, []),
     claimCheckin: useCallback(() => dispatch({ type: 'CLAIM_CHECKIN' }), []),
     claimFreeEgg: useCallback(() => dispatch({ type: 'CLAIM_FREE_EGG' }), []),
+    buyEgg: useCallback((eggType) => dispatch({ type: 'BUY_EGG', eggType }), []),
+    claimDailyZex: useCallback(() => dispatch({ type: 'CLAIM_DAILY_ZEX' }), []),
   };
 
   // Yardımcılar (UI kontrolleri için)
   const canCheckin = Date.now() - state.lastCheckin >= 24 * 3600 * 1000;
   const canClaimFreeEgg = Date.now() - state.lastFreeEgg >= 24 * 3600 * 1000;
 
+  // Günlük ZEX: birikmiş miktar + günlük toplam + dolu mu
+  const dailyZexTotal = DAILY_ZEX_BASE * state.boostMultiplier;
+  const zexElapsed = Date.now() - state.lastZexClaim;
+  const zexRatio = Math.min(1, zexElapsed / DAILY_ZEX_PERIOD_MS);
+  const claimableZex = dailyZexTotal * zexRatio;
+  const zexFull = zexRatio >= 1;
+
+  // Boost kalan süresi (ms). 0 ise boost yok/bitti.
+  const boostRemaining = state.boostMultiplier > 1
+    ? Math.max(0, state.boostEndTime - Date.now())
+    : 0;
+
   return (
-    <GameContext.Provider value={{ state, actions, canCheckin, canClaimFreeEgg }}>
+    <GameContext.Provider value={{
+      state, actions, canCheckin, canClaimFreeEgg,
+      dailyZexTotal, claimableZex, zexFull, boostRemaining,
+    }}>
       {children}
     </GameContext.Provider>
   );

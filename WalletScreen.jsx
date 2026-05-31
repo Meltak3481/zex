@@ -4,29 +4,54 @@ import { useToast } from './Toast.jsx';
 import { hapticSuccess, haptic } from './telegram.js';
 import { POINTS_PER_ZEX, MIN_SWAP_POINTS, formatNumber, formatZex } from './economy.js';
 
+// ms -> "3d 21h" / "5h 12m" / "8m 30s"
+function formatDuration(ms) {
+  if (ms <= 0) return '0m';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
+}
+
 export default function WalletScreen() {
-  const { state, actions } = useGame();
+  const { state, actions, dailyZexTotal, claimableZex, zexFull, boostRemaining } = useGame();
   const toast = useToast();
   const [amount, setAmount] = useState('');
 
   const pts = parseInt(amount, 10) || 0;
   const zexOut = pts / POINTS_PER_ZEX;
 
+  const handleClaim = () => {
+    if (claimableZex <= 0) {
+      toast('Nothing to claim yet');
+      haptic('rigid');
+      return;
+    }
+    actions.claimDailyZex();
+    hapticSuccess();
+    toast(`Claimed ${formatZex(claimableZex)} ZEX!`);
+  };
+
   const handleSwap = () => {
-    if (pts <= 0) { toast('Geçerli bir miktar gir'); return; }
+    if (pts <= 0) { toast('Enter a valid amount'); return; }
     if (pts < MIN_SWAP_POINTS) {
-      toast(`Minimum ${formatNumber(MIN_SWAP_POINTS)} puan (1 ZEX)`);
+      toast(`Minimum ${formatNumber(MIN_SWAP_POINTS)} points (1 ZEX)`);
       haptic('rigid');
       return;
     }
     if (pts > state.points) {
-      toast('Yetersiz puan!');
+      toast('Not enough points!');
       haptic('rigid');
       return;
     }
     actions.swap(pts);
     hapticSuccess();
-    toast(`${formatZex(zexOut)} ZEX kazandın!`);
+    toast(`You earned ${formatZex(zexOut)} ZEX!`);
     setAmount('');
   };
 
@@ -57,6 +82,28 @@ export default function WalletScreen() {
         <div style={{ color: 'var(--text-dim)', fontSize: 13 }}>
           ≈ {formatNumber(state.zex * POINTS_PER_ZEX)} points value
         </div>
+      </div>
+
+      {/* Daily ZEX Claim kartı (Flutter düzeni) */}
+      <div className="claim-card">
+        <div className="claim-reward">
+          Daily Zex Reward: {formatZex(dailyZexTotal)}
+        </div>
+        <div className="claim-next">
+          {zexFull ? 'Ready to claim!' : `Accumulating: ${formatZex(claimableZex)} ZEX`}
+        </div>
+        {boostRemaining > 0 && (
+          <div className="claim-boost">
+            Boost: {state.boostMultiplier}x ({formatDuration(boostRemaining)} left)
+          </div>
+        )}
+        <button
+          className="btn btn-green"
+          style={{ width: '100%', marginTop: 12 }}
+          onClick={handleClaim}
+        >
+          {zexFull ? 'Claim' : `Claim ${formatZex(claimableZex)} ZEX`}
+        </button>
       </div>
 
       {/* Swap kutusu */}
