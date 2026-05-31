@@ -3,6 +3,7 @@ import Lottie from 'lottie-react';
 import { useGame } from './GameContext.jsx';
 import { useToast } from './Toast.jsx';
 import { haptic, hapticSuccess } from './telegram.js';
+import { sfx } from './sound.js';
 import { CHECKIN_REWARDS, EGG_TYPES, EGG_PRICES, formatNumber } from './economy.js';
 import eggBreakAnim from './egg_break.json';
 
@@ -37,6 +38,7 @@ export default function CheckinScreen() {
     }
     actions.claimCheckin();
     hapticSuccess();
+    sfx.claim();
     toast(`Day ${day + 1}: +${formatNumber(todayReward.points)} pts, +${todayReward.zex} ZEX, ${todayReward.eggCount}x ${todayReward.eggType} egg!`);
   };
 
@@ -45,10 +47,12 @@ export default function CheckinScreen() {
     const count = state.ownedEggs.filter((e) => e === type).length;
     if (count === 0) return;
     haptic('medium');
+    sfx.eggCrack();
     const label = actions.openEgg(type);
     setOpening({ type, label });
     setTimeout(() => {
       hapticSuccess();
+      sfx.eggReward();
       setReward({ type, label });
       setOpening(null);
     }, 2600);
@@ -65,6 +69,7 @@ export default function CheckinScreen() {
     const type = buyPopup.type;
     actions.buyEgg(type);
     hapticSuccess();
+    sfx.purchase();
     toast(`${type} egg purchased with ${method}! (test)`);
     setBuyPopup(null);
   };

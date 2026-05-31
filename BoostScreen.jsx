@@ -1,6 +1,7 @@
 import { useGame } from './GameContext.jsx';
 import { useToast } from './Toast.jsx';
 import { haptic, hapticSuccess } from './telegram.js';
+import { sfx } from './sound.js';
 import {
   UPGRADE_PATTERN, MAX_LEVEL,
   getClickValue, getMineValue, getLimitValue, formatNumber,
@@ -40,6 +41,7 @@ export default function BoostScreen() {
     }
     actions.upgrade(stat.key, step.cost);
     hapticSuccess();
+    sfx.upgrade();
     toast(`${stat.title} yükseltildi! -${formatNumber(step.cost)}`);
   };
 

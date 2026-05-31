@@ -1,6 +1,7 @@
 import { useGame } from './GameContext.jsx';
 import { useToast } from './Toast.jsx';
 import { haptic, hapticSuccess } from './telegram.js';
+import { sfx } from './sound.js';
 import { BOOSTS, formatNumber } from './economy.js';
 
 function fmtDur(ms) {
@@ -32,6 +33,7 @@ export default function ShopScreen() {
     }
     actions.buyBoostWithPoints(index, boost);
     hapticSuccess();
+    sfx.purchase();
     toast(`${boost.label} purchased! +${boost.bonus} ZEX`);
   };
 

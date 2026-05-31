@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGame } from './GameContext.jsx';
 import { useToast } from './Toast.jsx';
 import { hapticSuccess, haptic } from './telegram.js';
+import { sfx } from './sound.js';
 import { POINTS_PER_ZEX, MIN_SWAP_POINTS, formatNumber, formatZex } from './economy.js';
 
 // ms -> "3d 21h" / "5h 12m" / "8m 30s"
@@ -34,6 +35,7 @@ export default function WalletScreen() {
     }
     actions.claimDailyZex();
     hapticSuccess();
+    sfx.claim();
     toast(`Claimed ${formatZex(claimableZex)} ZEX!`);
   };
 
@@ -51,6 +53,7 @@ export default function WalletScreen() {
     }
     actions.swap(pts);
     hapticSuccess();
+    sfx.swap();
     toast(`You earned ${formatZex(zexOut)} ZEX!`);
     setAmount('');
   };

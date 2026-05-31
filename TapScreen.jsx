@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useGame } from './GameContext.jsx';
 import { getClickValue, getMineValue, getLimitValue } from './economy.js';
 import { haptic } from './telegram.js';
+import { sfx } from './sound.js';
 import coinImg from './coin.png';
 
 let floatId = 0;
@@ -21,10 +22,12 @@ export default function TapScreen() {
   const onTap = useCallback((e) => {
     if (!canTap) {
       haptic('rigid');
+      sfx.fail();
       return;
     }
     actions.tap();
     haptic('light');
+    sfx.tap(1 + (state.boostMultiplier - 1) * 0.15);
 
     const rect = coinRef.current?.getBoundingClientRect();
     const touch = e.touches?.[0] || e.changedTouches?.[0];
@@ -42,15 +45,19 @@ export default function TapScreen() {
     }
 
     // Coin dokunulan yöne döner, sonra hemen düzelir
-    setRotation(dir * 18); // derece (Flutter'daki 0.2 rad ~ 11.5°, biraz belirgin yaptım)
+    setRotation(dir * 18);
     clearTimeout(resetTimer.current);
     resetTimer.current = setTimeout(() => setRotation(0), 130);
 
-    // +N parçacığı
+    // +N parçacığı + kıvılcımlar
     const id = ++floatId;
-    setFloats((f) => [...f, { id, x, y, val: clickValue }]);
+    const sparks = Array.from({ length: 6 }, (_, i) => ({
+      dx: Math.cos((Math.PI * 2 * i) / 6) * (38 + Math.random() * 26),
+      dy: Math.sin((Math.PI * 2 * i) / 6) * (38 + Math.random() * 26),
+    }));
+    setFloats((f) => [...f, { id, x, y, val: clickValue * state.boostMultiplier, sparks }]);
     setTimeout(() => setFloats((f) => f.filter((it) => it.id !== id)), 900);
-  }, [canTap, actions, clickValue]);
+  }, [canTap, actions, clickValue, state.boostMultiplier]);
 
   return (
     <div className="screen fade-in" style={{ display: 'flex', flexDirection: 'column' }}>
@@ -79,12 +86,23 @@ export default function TapScreen() {
             <img src={coinImg} alt="ZEX Coin" className="coin-img" draggable="false" />
           </div>
           {floats.map((f) => (
-            <span
-              key={f.id}
-              className="float-num"
-              style={{ left: `${f.x}%`, top: `${f.y}%` }}
-            >
-              +{f.val}
+            <span key={f.id}>
+              <span
+                className="float-num"
+                style={{ left: `${f.x}%`, top: `${f.y}%` }}
+              >
+                +{f.val}
+              </span>
+              {f.sparks?.map((s, i) => (
+                <span
+                  key={i}
+                  className="spark"
+                  style={{
+                    left: `${f.x}%`, top: `${f.y}%`,
+                    '--dx': `${s.dx}px`, '--dy': `${s.dy}px`,
+                  }}
+                />
+              ))}
             </span>
           ))}
         </div>
