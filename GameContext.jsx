@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useRef, useReducer, useCallback }
 import {
   getClickValue, getMineValue, getLimitValue,
   POINTS_PER_ZEX, BOOST_DURATION_MS,
-  DAILY_ZEX_BASE, DAILY_ZEX_PERIOD_MS,
+  DAILY_ZEX_BASE, DAILY_ZEX_PERIOD_MS, REFERRAL_REWARD,
   EGG_REWARDS, weightedRandom, parseReward, CHECKIN_REWARDS,
 } from './economy.js';
 
@@ -23,6 +23,9 @@ const initialState = {
   lastCheckin: 0,           // son check-in zamanı (ms)
   lastFreeEgg: 0,           // son günlük ücretsiz egg zamanı (ms)
   lastZexClaim: Date.now(), // son günlük ZEX claim zamanı (ms)
+  referralUsed: false,      // arkadaş kodu girildi mi (bir kez)
+  referralCount: 0,         // kaç kişi senin kodunu kullandı (backend gelince gerçek)
+  kycApplied: false,        // KYC başvurusu yapıldı mı
   lastSeen: Date.now(),     // offline mining hesabı için
   lifetimePoints: 0,        // istatistik
 };
@@ -197,6 +200,22 @@ function reducer(state, action) {
       };
     }
 
+    case 'SUBMIT_REFERRAL': {
+      // Arkadaş kodu girildi — bir kez, ödül ver (test/local; backend gelince doğrulanır)
+      if (state.referralUsed) return state;
+      return {
+        ...state,
+        referralUsed: true,
+        points: state.points + REFERRAL_REWARD.points,
+        zex: state.zex + REFERRAL_REWARD.zex,
+        lifetimePoints: state.lifetimePoints + REFERRAL_REWARD.points,
+      };
+    }
+
+    case 'APPLY_KYC': {
+      return { ...state, kycApplied: true };
+    }
+
     case 'HYDRATE':
       return { ...state, ...action.state };
 
@@ -260,6 +279,8 @@ export function GameProvider({ children }) {
     claimFreeEgg: useCallback(() => dispatch({ type: 'CLAIM_FREE_EGG' }), []),
     buyEgg: useCallback((eggType) => dispatch({ type: 'BUY_EGG', eggType }), []),
     claimDailyZex: useCallback(() => dispatch({ type: 'CLAIM_DAILY_ZEX' }), []),
+    submitReferral: useCallback(() => dispatch({ type: 'SUBMIT_REFERRAL' }), []),
+    applyKyc: useCallback(() => dispatch({ type: 'APPLY_KYC' }), []),
   };
 
   // Yardımcılar (UI kontrolleri için)

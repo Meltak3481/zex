@@ -8,6 +8,7 @@ import BoostScreen from './BoostScreen.jsx';
 import ShopScreen from './ShopScreen.jsx';
 import WalletScreen from './WalletScreen.jsx';
 import CheckinScreen from './CheckinScreen.jsx';
+import AccountScreen from './AccountScreen.jsx';
 import Splash from './Splash.jsx';
 import { initTelegram } from './telegram.js';
 import { sfx, isSoundEnabled, setSoundEnabled } from './sound.js';
@@ -58,6 +59,7 @@ export default function App() {
           {tab === 'shop' && <ShopScreen />}
           {tab === 'wallet' && <WalletScreen />}
           {tab === 'checkin' && <CheckinScreen />}
+          {tab === 'account' && <AccountScreen />}
           <NavBar active={tab} onChange={changeTab} />
         </div>
       </ToastProvider>

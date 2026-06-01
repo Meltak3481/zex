@@ -305,19 +305,19 @@ body {
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; gap: 3px;
-  padding: 6px 2px;
+  padding: 6px 1px;
   background: none; border: none;
   color: var(--text-dim);
   cursor: pointer;
   font-family: 'Rajdhani', sans-serif;
   font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.3px;
+  font-size: 10px;
+  letter-spacing: 0.2px;
   transition: color 0.2s ease;
 }
 .nav-item.active { color: var(--neon-cyan); }
 .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px rgba(0,229,255,0.7)); }
-.nav-icon { font-size: 20px; line-height: 1; }
+.nav-icon { font-size: 18px; line-height: 1; }
 
 /* Toast */
 .toast {
@@ -602,3 +602,77 @@ body {
   transition: transform 0.1s ease;
 }
 .sound-toggle:active { transform: scale(0.9); }
+
+/* ===== ACCOUNT EKRANI ===== */
+.account-title {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900; font-size: 20px;
+  color: var(--neon-gold);
+  text-align: center; letter-spacing: 1px;
+  text-shadow: 0 0 16px rgba(255,200,61,0.4);
+  margin: 8px 0 20px;
+}
+.acc-section-label {
+  text-align: center; color: var(--text);
+  font-family: 'Rajdhani', sans-serif; font-weight: 700;
+  font-size: 17px; margin-bottom: 12px;
+}
+.referral-row {
+  display: flex; align-items: center; gap: 12px;
+  justify-content: center;
+}
+.referral-code {
+  font-family: 'Orbitron', sans-serif; font-weight: 700;
+  font-size: 20px; color: var(--neon-cyan);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(0,229,255,0.3);
+  border-radius: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: transform 0.1s ease;
+}
+.referral-code:active { transform: scale(0.96); }
+.copy-hint { font-size: 14px; }
+.referral-reward {
+  color: var(--neon-green); font-weight: 700;
+  font-size: 14px; text-align: left; line-height: 1.3;
+}
+.used-codes {
+  text-align: center; color: var(--text-dim);
+  font-size: 13px; margin: 10px 0 16px;
+}
+.referral-input {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 15px 16px;
+  color: var(--text); font-size: 16px;
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif; font-weight: 600;
+  outline: none;
+}
+.referral-input::placeholder { color: var(--text-dim); }
+.referral-input:focus { border-color: var(--neon-cyan); }
+.referral-input:disabled { opacity: 0.5; }
+
+.acc-info-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+}
+.acc-info-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.acc-info-row:last-child { border-bottom: none; }
+.acc-info-row span { color: var(--text-dim); font-size: 14px; }
+.acc-info-row strong { color: var(--text); font-size: 14px; font-weight: 700; }
+
+.btn-danger {
+  background: linear-gradient(135deg, #ff5a4d, #e83b2e);
+  color: #fff; font-weight: 700;
+}

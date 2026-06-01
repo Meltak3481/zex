@@ -62,7 +62,7 @@ export default function CheckinScreen() {
     setTimeout(() => {
       setReward({ type: current.type, label: current.label });  // popup 0.3sn sonra
       setOpening(null);
-    }, 500);
+    }, 300);
   };
 
   // Satın alma popup'ı aç
@@ -157,7 +157,7 @@ export default function CheckinScreen() {
       {opening && (
         <div className="egg-break-overlay">
           <div className="egg-break-stage">
-            <Lottie animationData={eggBreakAnim} loop={false} autoplay speed={3} onComplete={handleAnimComplete} style={{ width: 280, height: 280 }} />
+            <Lottie animationData={eggBreakAnim} loop={false} autoplay speed={1.8} onComplete={handleAnimComplete} style={{ width: 280, height: 280 }} />
             <div className="egg-break-label" style={{ color: EGG_COLOR[opening.type] }}>
               Opening {opening.type}...
             </div>

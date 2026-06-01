@@ -22,6 +22,26 @@ export function getTelegramUser() {
   return tg?.initDataUnsafe?.user ?? null;
 }
 
+// Kullanıcının görünen adı (Telegram'dan). Yoksa null.
+export function getUserDisplayName() {
+  const u = tg?.initDataUnsafe?.user;
+  if (!u) return null;
+  const name = [u.first_name, u.last_name].filter(Boolean).join(' ');
+  return name || u.username || null;
+}
+
+// Kullanıcının benzersiz referral kodu (Telegram ID'den türetilir)
+export function getUserReferralCode() {
+  const u = tg?.initDataUnsafe?.user;
+  if (u?.id) return 'ZEX' + String(u.id).slice(-6);
+  return null;
+}
+
+// Mini App'i kapat (Exit butonu)
+export function closeApp() {
+  try { tg?.close?.(); } catch (_) {}
+}
+
 export function isInTelegram() {
   return !!tg && !!tg.initData;
 }

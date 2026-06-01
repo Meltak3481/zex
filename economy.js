@@ -9,6 +9,9 @@ export const MIN_SWAP_POINTS = 40000; // minimum çevrim (mikro-ZEX istismarın�
 export const DAILY_ZEX_BASE = 10;
 export const DAILY_ZEX_PERIOD_MS = 24 * 60 * 60 * 1000; // 24 saatte tam dolar
 
+// Referral (davet) ödülü — arkadaş kodu girince kazanılan
+export const REFERRAL_REWARD = { points: 10000, zex: 5 };
+
 // Click (tap) gücü: her seviye +1 puan/tap
 export const getClickValue = (level) => level;
 

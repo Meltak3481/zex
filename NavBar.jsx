@@ -3,6 +3,7 @@ const TABS = [
   { id: 'boost', label: 'Power', icon: '🚀' },
   { id: 'shop', label: 'Boost', icon: '✨' },
   { id: 'checkin', label: 'Egg', icon: '🥚' },
+  { id: 'account', label: 'Account', icon: '👤' },
   { id: 'wallet', label: 'Wallet', icon: '💎' },
 ];
 
