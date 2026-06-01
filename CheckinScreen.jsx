@@ -53,13 +53,16 @@ export default function CheckinScreen() {
     sfx.eggCrack();
   };
 
-  // Lottie animasyonu bitince: ödül sesi + popup (kesin senkron)
+  // Lottie animasyonu bitince: önce ödül sesi, 0.3sn sonra popup
   const handleAnimComplete = () => {
     if (!opening) return;
+    const current = opening;
     hapticSuccess();
-    sfx.eggReward();
-    setReward({ type: opening.type, label: opening.label });
-    setOpening(null);
+    sfx.eggReward();              // ödül sesi HEMEN çalar
+    setTimeout(() => {
+      setReward({ type: current.type, label: current.label });  // popup 0.3sn sonra
+      setOpening(null);
+    }, 300);
   };
 
   // Satın alma popup'ı aç
