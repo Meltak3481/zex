@@ -47,15 +47,19 @@ export default function CheckinScreen() {
     const count = state.ownedEggs.filter((e) => e === type).length;
     if (count === 0) return;
     haptic('medium');
-    sfx.eggCrack();
     const label = actions.openEgg(type);
     setOpening({ type, label });
-    setTimeout(() => {
-      hapticSuccess();
-      sfx.eggReward();
-      setReward({ type, label });
-      setOpening(null);
-    }, 2600);
+    // Çatlama sesi animasyon başında çalsın
+    sfx.eggCrack();
+  };
+
+  // Lottie animasyonu bitince: ödül sesi + popup (kesin senkron)
+  const handleAnimComplete = () => {
+    if (!opening) return;
+    hapticSuccess();
+    sfx.eggReward();
+    setReward({ type: opening.type, label: opening.label });
+    setOpening(null);
   };
 
   // Satın alma popup'ı aç
@@ -150,7 +154,7 @@ export default function CheckinScreen() {
       {opening && (
         <div className="egg-break-overlay">
           <div className="egg-break-stage">
-            <Lottie animationData={eggBreakAnim} loop={false} autoplay style={{ width: 280, height: 280 }} />
+            <Lottie animationData={eggBreakAnim} loop={false} autoplay speed={1.8} onComplete={handleAnimComplete} style={{ width: 280, height: 280 }} />
             <div className="egg-break-label" style={{ color: EGG_COLOR[opening.type] }}>
               Opening {opening.type}...
             </div>
