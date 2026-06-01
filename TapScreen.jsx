@@ -27,7 +27,7 @@ export default function TapScreen() {
     }
     actions.tap();
     haptic('light');
-    sfx.tap(1 + (state.boostMultiplier - 1) * 0.15);
+    sfx.tap();
 
     const rect = coinRef.current?.getBoundingClientRect();
     const touch = e.touches?.[0] || e.changedTouches?.[0];

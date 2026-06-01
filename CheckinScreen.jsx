@@ -38,7 +38,7 @@ export default function CheckinScreen() {
     }
     actions.claimCheckin();
     hapticSuccess();
-    sfx.claim();
+    sfx.checkin();
     toast(`Day ${day + 1}: +${formatNumber(todayReward.points)} pts, +${todayReward.zex} ZEX, ${todayReward.eggCount}x ${todayReward.eggType} egg!`);
   };
 
