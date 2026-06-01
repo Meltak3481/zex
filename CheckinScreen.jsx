@@ -157,7 +157,7 @@ export default function CheckinScreen() {
       {opening && (
         <div className="egg-break-overlay">
           <div className="egg-break-stage">
-            <Lottie animationData={eggBreakAnim} loop={false} autoplay speed={1.3} onComplete={handleAnimComplete} style={{ width: 280, height: 280 }} />
+            <Lottie animationData={eggBreakAnim} loop={false} autoplay speed={3} onComplete={handleAnimComplete} style={{ width: 280, height: 280 }} />
             <div className="egg-break-label" style={{ color: EGG_COLOR[opening.type] }}>
               Opening {opening.type}...
             </div>
