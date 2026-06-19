@@ -50,10 +50,7 @@ export default function App() {
         />
         <div className="bg-overlay" />
         <div className="app">
-          <TopBar />
-          <button className="sound-toggle" onClick={toggleSound} aria-label="Toggle sound">
-            {soundOn ? '🔊' : '🔇'}
-          </button>
+          <TopBar soundOn={soundOn} onToggleSound={toggleSound} />
           {tab === 'tap' && <TapScreen />}
           {tab === 'boost' && <BoostScreen />}
           {tab === 'shop' && <ShopScreen />}

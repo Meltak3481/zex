@@ -21,13 +21,13 @@ const EGG_BROKEN = { Free: eggFreeBroken, Common: eggCommonBroken, Rare: eggRare
 const EGG_COLOR = { Free: '#4db8ff', Common: '#ffc83d', Rare: '#ff4d4d', Legendary: '#ff9a3d' };
 
 export default function CheckinScreen() {
-  const { state, actions, canCheckin } = useGame();
+  const { state, actions, canCheckin, checkinPendingDay } = useGame();
   const toast = useToast();
   const [opening, setOpening] = useState(null);   // {type} Lottie açılışı
   const [reward, setReward] = useState(null);     // ödül popup
   const [buyPopup, setBuyPopup] = useState(null); // {type} satın alma popup
 
-  const day = Math.min(state.checkinDay, 6);
+  const day = checkinPendingDay;
   const todayReward = CHECKIN_REWARDS[day];
 
   const handleCheckin = () => {
@@ -100,8 +100,8 @@ export default function CheckinScreen() {
       {/* Day 1-7 tik sırası */}
       <div className="checkin-days">
         {CHECKIN_REWARDS.map((r, i) => {
-          const done = i < state.checkinDay;
-          const current = i === state.checkinDay && canCheckin;
+          const done = i < checkinPendingDay;
+          const current = i === checkinPendingDay && canCheckin;
           return (
             <div key={i} className={'cday' + (current ? ' current' : '')}>
               <div className="cday-label">Day {i + 1}</div>

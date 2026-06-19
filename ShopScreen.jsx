@@ -42,6 +42,19 @@ export default function ShopScreen() {
     haptic('rigid');
   };
 
+  const renewBoost = (index, boost) => {
+    if (!state.ownedBoosts.includes(index)) return;
+    if (state.points < boost.pointCost) {
+      toast(`Not enough points! Need ${formatNumber(boost.pointCost)}`);
+      haptic('rigid');
+      return;
+    }
+    actions.renewBoost(index, boost);
+    hapticSuccess();
+    sfx.purchase();
+    toast(`${boost.label} reactivated for 5 days!`);
+  };
+
   return (
     <div className="screen fade-in">
       <div className="section-title">
@@ -122,6 +135,25 @@ export default function ShopScreen() {
                 {!available && (
                   <div className="locked-note">🔒 Buy previous boost</div>
                 )}
+              </>
+            )}
+
+            {owned && !isActiveBoost && (
+              <>
+                <div style={{ height: 10 }} />
+                <div className="btn-pair">
+                  <button className="btn btn-green" onClick={buyWithMoney}>
+                    💲 ${boost.price.toFixed(1)}
+                  </button>
+                  <button
+                    className="btn btn-orange"
+                    disabled={!canAfford}
+                    onClick={() => renewBoost(index, boost)}
+                  >
+                    🔄 {formatNumber(boost.pointCost)}
+                  </button>
+                </div>
+                <div className="locked-note">Reactivate this boost for 5 more days</div>
               </>
             )}
           </div>

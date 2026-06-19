@@ -1,7 +1,7 @@
 import { useGame } from './GameContext.jsx';
 import { formatNumber, formatZex } from './economy.js';
 
-export default function TopBar() {
+export default function TopBar({ soundOn, onToggleSound }) {
   const { state } = useGame();
   return (
     <div className="topbar">
@@ -27,6 +27,9 @@ export default function TopBar() {
           </div>
         </div>
       </div>
+      <button className="sound-btn" onClick={onToggleSound} aria-label="Toggle sound">
+        {soundOn ? '🔊' : '🔇'}
+      </button>
     </div>
   );
 }

@@ -20,7 +20,7 @@ function formatDuration(ms) {
 }
 
 export default function WalletScreen() {
-  const { state, actions, dailyZexTotal, claimableZex, zexFull, boostRemaining } = useGame();
+  const { state, actions, zexReady, zexReward, zexCountdown, boostRemaining } = useGame();
   const toast = useToast();
   const [amount, setAmount] = useState('');
 
@@ -28,15 +28,15 @@ export default function WalletScreen() {
   const zexOut = pts / POINTS_PER_ZEX;
 
   const handleClaim = () => {
-    if (claimableZex <= 0) {
-      toast('Nothing to claim yet');
+    if (!zexReady) {
+      toast(`Not ready yet — ${formatDuration(zexCountdown)} left`);
       haptic('rigid');
       return;
     }
     actions.claimDailyZex();
     hapticSuccess();
     sfx.claim();
-    toast(`Claimed ${formatZex(claimableZex)} ZEX!`);
+    toast(`Claimed ${formatZex(zexReward)} ZEX!`);
   };
 
   const handleSwap = () => {
@@ -87,13 +87,13 @@ export default function WalletScreen() {
         </div>
       </div>
 
-      {/* Daily ZEX Claim kartı (Flutter düzeni) */}
+      {/* Daily ZEX Claim kartı (24 saat kilit, sabit ödül) */}
       <div className="claim-card">
         <div className="claim-reward">
-          Daily Zex Reward: {formatZex(dailyZexTotal)}
+          Daily Zex Reward: {formatZex(zexReward)}
         </div>
         <div className="claim-next">
-          {zexFull ? 'Ready to claim!' : `Accumulating: ${formatZex(claimableZex)} ZEX`}
+          {zexReady ? 'Ready to claim!' : `Next claim in ${formatDuration(zexCountdown)}`}
         </div>
         {boostRemaining > 0 && (
           <div className="claim-boost">
@@ -101,11 +101,12 @@ export default function WalletScreen() {
           </div>
         )}
         <button
-          className="btn btn-green"
+          className={'btn ' + (zexReady ? 'btn-green' : 'btn-ghost')}
           style={{ width: '100%', marginTop: 12 }}
           onClick={handleClaim}
+          disabled={!zexReady}
         >
-          {zexFull ? 'Claim' : `Claim ${formatZex(claimableZex)} ZEX`}
+          {zexReady ? `Claim ${formatZex(zexReward)} ZEX` : `Locked • ${formatDuration(zexCountdown)}`}
         </button>
       </div>
 

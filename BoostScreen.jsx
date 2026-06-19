@@ -74,7 +74,7 @@ export default function BoostScreen() {
               <div className="card-info">
                 <div className="name">{stat.title}</div>
                 <div className="sub" style={{ color: stat.accent }}>
-                  Level {level - 1} / {MAX_LEVEL}
+                  Level {level} / {MAX_LEVEL + 1}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
