@@ -1,2 +1,13 @@
 name = "zex-network"
 pages_build_output_dir = "dist"
+
+# Cloudflare KV: satın alma defteri. id'yi kendi namespace'inle değiştir
+# (Dashboard > Workers & Pages > KV > Create namespace, ya da:
+#  npx wrangler kv namespace create ZEX_KV  -> çıkan id'yi buraya yaz)
+[[kv_namespaces]]
+binding = "ZEX_KV"
+id = "BURAYA_KV_NAMESPACE_ID"
+
+# Secrets (DASHBOARD'dan ekle, buraya YAZMA):
+#   BOT_TOKEN        -> BotFather token'ın
+#   WEBHOOK_SECRET   -> kendi belirlediğin rastgele gizli dize

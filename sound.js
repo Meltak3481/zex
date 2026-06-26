@@ -1,5 +1,6 @@
-// Gerçek ses dosyalarını çalan ses motoru (MP3, kullanıcının yüklediği sesler).
-// Her ses için bir Audio havuzu (üst üste çalabilsin diye klonlanır).
+// Düşük gecikmeli ses motoru (Web Audio API).
+// Sesler bir kez decode edilip buffer olarak tutulur; tıklamada anında çalar.
+// Web Audio yoksa/decode başarısızsa HTML5 Audio'ya düşer.
 
 import sndTap from './snd_tap.mp3';
 import sndTab from './snd_tab.mp3';
@@ -24,44 +25,97 @@ export function isSoundEnabled() {
   return enabled;
 }
 
-// Her ses için bir Audio nesnesi; çalarken klonlayarak üst üste binmeye izin ver
-function makePlayer(src, volume = 0.7) {
-  const base = new Audio(src);
-  base.preload = 'auto';
-  base.volume = volume;
-  return () => {
-    if (!enabled) return;
-    try {
-      // Kısa sesler için klon (hızlı tıklamada kesilmesin)
-      const a = base.cloneNode();
-      a.volume = volume;
-      a.play().catch(() => {});
-    } catch {}
-  };
-}
-
-const players = {
-  tap: makePlayer(sndTap, 0.6),
-  tab: makePlayer(sndTab, 0.5),
-  upgrade: makePlayer(sndUpgrade, 0.7),
-  purchase: makePlayer(sndPurchase, 0.7),
-  claim: makePlayer(sndClaim, 0.75),
-  checkin: makePlayer(sndCheckin, 0.7),
-  eggCrack: makePlayer(sndEggCrack, 0.8),
-  eggReward: makePlayer(sndEggReward, 0.8),
+// İsim -> [url, ses seviyesi]
+const SOURCES = {
+  tap: [sndTap, 0.6],
+  tab: [sndTab, 0.5],
+  upgrade: [sndUpgrade, 0.7],
+  purchase: [sndPurchase, 0.7],
+  claim: [sndClaim, 0.75],
+  checkin: [sndCheckin, 0.7],
+  eggCrack: [sndEggCrack, 0.8],
+  eggReward: [sndEggReward, 0.8],
 };
 
+let ctx = null;
+const buffers = {};    // name -> AudioBuffer (Web Audio)
+const fallback = {};   // name -> HTMLAudioElement (yedek)
+
+function getCtx() {
+  if (ctx) return ctx;
+  const AC = (typeof window !== 'undefined') && (window.AudioContext || window.webkitAudioContext);
+  if (!AC) return null;
+  try { ctx = new AC(); } catch { ctx = null; }
+  return ctx;
+}
+
+// Tüm sesleri önceden decode et (ilk dokunuşta hazır olsun -> gecikme olmaz)
+async function decodeAll() {
+  const c = getCtx();
+  await Promise.all(Object.entries(SOURCES).map(async ([name, [url]]) => {
+    try {
+      if (!c) throw new Error('no-webaudio');
+      const res = await fetch(url);
+      const arr = await res.arrayBuffer();
+      buffers[name] = await c.decodeAudioData(arr);
+    } catch {
+      try { const a = new Audio(url); a.preload = 'auto'; fallback[name] = a; } catch {}
+    }
+  }));
+}
+
+if (typeof window !== 'undefined') {
+  // Modül yüklenir yüklenmez ön-yükle
+  decodeAll();
+  // İlk kullanıcı etkileşiminde AudioContext'i aç (tarayıcı autoplay kuralı)
+  const onFirst = () => {
+    const c = getCtx();
+    if (c && c.state === 'suspended') c.resume().catch(() => {});
+    window.removeEventListener('pointerdown', onFirst);
+    window.removeEventListener('touchstart', onFirst);
+  };
+  window.addEventListener('pointerdown', onFirst, { once: true });
+  window.addEventListener('touchstart', onFirst, { once: true });
+}
+
+function play(name) {
+  if (!enabled) return;
+  const c = getCtx();
+  const conf = SOURCES[name] || [null, 0.7];
+  const vol = conf[1];
+
+  // Web Audio yolu (anında, gecikmesiz, üst üste binebilir)
+  if (c && buffers[name]) {
+    try {
+      if (c.state === 'suspended') c.resume().catch(() => {});
+      const src = c.createBufferSource();
+      src.buffer = buffers[name];
+      const g = c.createGain();
+      g.gain.value = vol;
+      src.connect(g).connect(c.destination);
+      src.start(0);
+      return;
+    } catch {}
+  }
+
+  // Yedek: HTML5 Audio (buffer henüz hazır değilse)
+  try {
+    const a = fallback[name] ? fallback[name].cloneNode() : new Audio(conf[0]);
+    a.volume = vol;
+    a.play().catch(() => {});
+  } catch {}
+}
+
 export const sfx = {
-  tap() { players.tap(); },
-  tab() { players.tab(); },
-  upgrade() { players.upgrade(); },
-  purchase() { players.purchase(); },
-  claim() { players.claim(); },
-  checkin() { players.checkin(); },
-  eggCrack() { players.eggCrack(); },
-  eggReward() { players.eggReward(); },
-  // Koddan üretilenler kaldırıldı; bunlar artık gerçek dosya yok -> sessiz/eşlenik
-  fail() { /* enerji bitti sesi yok; istenirse eklenir */ },
-  swap() { players.claim(); },   // swap için claim sesini kullan (ya da ayrı yüklenebilir)
-  splash() { /* splash sesi yok; ilk dokunuşta zaten ses açılır */ },
+  tap() { play('tap'); },
+  tab() { play('tab'); },
+  upgrade() { play('upgrade'); },
+  purchase() { play('purchase'); },
+  claim() { play('claim'); },
+  checkin() { play('checkin'); },
+  eggCrack() { play('eggCrack'); },
+  eggReward() { play('eggReward'); },
+  fail() { /* sessiz */ },
+  swap() { play('claim'); },
+  splash() { /* splash sesi yok */ },
 };
